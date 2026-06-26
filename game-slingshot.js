@@ -20,8 +20,8 @@ window.RoxLaunch = (function () {
   var SLING_Y = 400;
   var PROJECTILE_R = 20;
   var MAX_PULL = 150;
-  var LAUNCH_POWER = 0.28;
-  var ROCKET_POWER_MULT = 2.6;
+  var LAUNCH_POWER = 0.21;
+  var ROCKET_POWER_MULT = 2.1;
   var ROCKET_THRESHOLD = 0.88;
   var GROUND_H = 44;
   var GROUND_Y = WORLD_H - GROUND_H;
@@ -807,7 +807,7 @@ window.RoxLaunch = (function () {
       label: 'projectile',
       density: 0.002,
       friction: 0.2,
-      frictionAir: 0.008,
+      frictionAir: 0.012,
       restitution: 0.45
     });
     Body.setStatic(projectile, true);
@@ -1099,7 +1099,7 @@ window.RoxLaunch = (function () {
 
     if (isRocketShot && projectile) {
       projectile.isRocket = true;
-      projectile.frictionAir = 0.003;
+      projectile.frictionAir = 0.006;
     }
 
     canShoot = false;
