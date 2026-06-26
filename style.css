@@ -2727,3 +2727,7 @@ main > section:not(#home) {
 body.perf-lite main > section:not(#home) {
   contain-intrinsic-size: auto 480px;
 }
+
+#playground {
+  content-visibility: visible;
+}

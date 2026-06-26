@@ -135,8 +135,10 @@ window.RoxLaunch = (function () {
   var scaleY = 1;
   var resizeObserver = null;
   var resizeCanvasRaf = null;
+  var onOrientationChange = null;
   var lastCanvasLayout = { w: 0, h: 0, bw: 0, bh: 0 };
   var dpr = 1;
+  var FIXED_DELTA = 1000 / 60;
 
   var particles = [];
   var floatTexts = [];
@@ -1083,10 +1085,80 @@ window.RoxLaunch = (function () {
     return Math.sqrt(dx * dx + dy * dy) < getSlingshotHitRadius();
   }
 
+  function circleRectOverlap(cx, cy, r, body) {
+    var w = body.blockW || 20;
+    var h = body.blockH || 20;
+    var pos = body.position;
+    var cos = Math.cos(body.angle);
+    var sin = Math.sin(body.angle);
+    var dx = cx - pos.x;
+    var dy = cy - pos.y;
+    var localX = dx * cos + dy * sin;
+    var localY = -dx * sin + dy * cos;
+    var halfW = w / 2;
+    var halfH = h / 2;
+    var closestX = Math.max(-halfW, Math.min(halfW, localX));
+    var closestY = Math.max(-halfH, Math.min(halfH, localY));
+    var distX = localX - closestX;
+    var distY = localY - closestY;
+    return (distX * distX + distY * distY) < r * r;
+  }
+
+  function checkProjectileOverlaps() {
+    if (!isFlying || !projectile || projectileShattered) return;
+
+    var pos = projectile.position;
+    var px = pos.x;
+    var py = pos.y;
+    var impact = Vector.magnitude(projectile.velocity);
+
+    targets.forEach(function (t) {
+      if (t.destroyed) return;
+      var tp = t.body.position;
+      var tr = t.radius;
+      var dx = px - tp.x;
+      var dy = py - tp.y;
+      var hitR = PROJECTILE_R + tr;
+      if (dx * dx + dy * dy < hitR * hitR) {
+        wakeFromProjectileHit(t.body);
+        onTargetDestroyed(t, px, py, impact);
+      }
+    });
+
+    levelBodies.forEach(function (block) {
+      if (block.destroyed) return;
+      if (!circleRectOverlap(px, py, PROJECTILE_R, block)) return;
+
+      wakeFromProjectileHit(block);
+      if (canDestroyBlocks(projectile)) {
+        breakBlock(block, impact, projectile);
+      }
+      if (isRocketShot) {
+        shatterProjectile(px, py, { x: projectile.velocity.x, y: projectile.velocity.y });
+      } else if (impact > 3) {
+        spawnImpactBurst(px, py, Math.min(impact, 8), false);
+      }
+    });
+
+    if (isRocketShot && py + PROJECTILE_R >= GROUND_Y) {
+      shatterProjectile(px, py, { x: projectile.velocity.x, y: projectile.velocity.y });
+    }
+  }
+
+  function stepPhysics() {
+    var steps = isTouchDevice() ? 3 : 1;
+    var i;
+    for (i = 0; i < steps; i++) {
+      Engine.update(engine, FIXED_DELTA);
+      if (isFlying && projectile) checkProjectileOverlaps();
+    }
+  }
+
   function onPointerDown(e) {
     if (!canShoot || gameOver || levelWon || gamePaused) return;
     if (activePointerId !== null) return;
 
+    applyCanvasResize();
     var pos = screenToWorld(e.clientX, e.clientY);
     if (isNearSlingshot(pos)) {
       e.preventDefault();
@@ -1137,7 +1209,10 @@ window.RoxLaunch = (function () {
 
     var w = wrap.clientWidth;
     var h = wrap.clientHeight;
-    if (w <= 0 || h <= 0) return;
+    if (w <= 0 || h <= 0) {
+      requestAnimationFrame(applyCanvasResize);
+      return;
+    }
 
     dpr = Math.min(window.devicePixelRatio || 1, (window.YedRoxPerf && window.YedRoxPerf.lite) ? 1 : 2);
     var bw = Math.floor(w * dpr);
@@ -1677,7 +1752,7 @@ window.RoxLaunch = (function () {
       gameLoopLastTs = ts;
     }
 
-    Engine.update(engine, perf.lite ? 1000 / 30 : 1000 / 60);
+    stepPhysics();
     settleCheck();
     render();
     animFrame = requestAnimationFrame(gameLoop);
@@ -1725,6 +1800,11 @@ window.RoxLaunch = (function () {
       });
       resizeObserver.observe(canvas.parentElement);
     }
+
+    onOrientationChange = function () {
+      resizeCanvas();
+    };
+    window.addEventListener('orientationchange', onOrientationChange);
   }
 
   function unbindInput() {
@@ -1734,6 +1814,10 @@ window.RoxLaunch = (function () {
     canvas.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('resize', resizeCanvas);
+    if (onOrientationChange) {
+      window.removeEventListener('orientationchange', onOrientationChange);
+      onOrientationChange = null;
+    }
     if (resizeObserver) {
       resizeObserver.disconnect();
       resizeObserver = null;
@@ -1742,7 +1826,7 @@ window.RoxLaunch = (function () {
 
   function setupPhysics() {
     var perf = window.YedRoxPerf || {};
-    var iterations = perf.lite ? 6 : 10;
+    var iterations = (perf.lite && !isTouchDevice()) ? 6 : 10;
 
     engine = Engine.create({ gravity: { x: 0, y: 1 } });
     engine.positionIterations = iterations;
@@ -1827,7 +1911,9 @@ window.RoxLaunch = (function () {
     bindInput();
     resizeCanvas();
     requestAnimationFrame(function () {
-      resizeCanvas();
+      requestAnimationFrame(function () {
+        applyCanvasResize();
+      });
     });
     currentLevel = 0;
     totalScore = 0;
