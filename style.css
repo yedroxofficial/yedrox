@@ -2014,6 +2014,28 @@ textarea {
   .showcase-card:active {
     transform: scale(0.98);
   }
+
+  @keyframes crackImpactGlow {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes crackImpactChip {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes crackImpactRing {
+    0% { opacity: 0; stroke-width: 3; }
+    100% { opacity: 1; stroke-width: 1.5; }
+  }
+
+  body.site-shake header,
+  body.site-shake main,
+  body.site-shake footer,
+  body.site-shake .ambient-glow {
+    animation: siteShake 0.14s ease-in-out infinite;
+  }
 }
 
 /* --- Rox Launch Playground --- */
@@ -2265,10 +2287,16 @@ textarea {
 .screen-cracks {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
   z-index: 10000;
   pointer-events: none;
   opacity: 0;
   background: rgba(0, 0, 0, 0);
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  isolation: isolate;
 }
 
 .screen-cracks[hidden] {
@@ -2299,8 +2327,17 @@ textarea {
 }
 
 .screen-crack-glass {
+  display: block;
   width: 100%;
   height: 100%;
+}
+
+.screen-cracks--waapi .crack-layer path {
+  animation: none !important;
+}
+
+.screen-cracks.active .crack-layer--highlight path {
+  animation: crackDraw 1.2s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .crack-impact-glow {
@@ -2414,7 +2451,19 @@ textarea {
 }
 
 body.site-shake {
-  animation: siteShake 0.14s ease-in-out infinite;
+  animation: none;
+}
+
+body.site-shake header,
+body.site-shake main,
+body.site-shake footer,
+body.site-shake .ambient-glow {
+  animation: siteShakeRamp 0.7s ease-out forwards, siteShake 0.14s 0.7s ease-in-out infinite;
+}
+
+@keyframes siteShakeRamp {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(0, 0); }
 }
 
 @keyframes siteShake {
@@ -2428,6 +2477,12 @@ body.site-shake {
 
 /* --- Shattered typography after rocket impact --- */
 body.site-shattered {
+  animation: none;
+}
+
+body.site-shattered header,
+body.site-shattered main,
+body.site-shattered footer {
   animation: siteDecayFilter 2.8s ease-out forwards;
 }
 
@@ -2552,14 +2607,6 @@ body.site-shattered .letter-shard--broken::after {
   }
 }
 
-body.site-shake {
-  animation: siteShakeRamp 0.7s ease-out forwards, siteShake 0.14s 0.7s ease-in-out infinite;
-}
-
-@keyframes siteShakeRamp {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(0, 0); }
-}
 body.site-shattered .letter-shard--fallen {
   animation-duration: 1.45s;
   animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
@@ -2617,7 +2664,21 @@ body.site-shattered .letter-shard--fallen {
     animation: none;
   }
 
+  body.site-shake header,
+  body.site-shake main,
+  body.site-shake footer,
+  body.site-shake .ambient-glow {
+    animation: none;
+  }
+
   body.site-shattered {
+    animation: none;
+    filter: none;
+  }
+
+  body.site-shattered header,
+  body.site-shattered main,
+  body.site-shattered footer {
     animation: none;
     filter: contrast(1.08) saturate(0.78) brightness(0.94);
   }

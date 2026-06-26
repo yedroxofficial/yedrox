@@ -544,6 +544,45 @@ window.RoxLaunch = (function () {
     }, 3200);
   }
 
+  function ensureCracksPortal() {
+    var cracks = document.getElementById('screenCracks');
+    if (cracks && cracks.parentElement !== document.documentElement) {
+      document.documentElement.appendChild(cracks);
+    }
+    return cracks;
+  }
+
+  function resetCrackPathStyles() {
+    var svg = document.querySelector('#screenCracks .screen-crack-glass');
+    if (!svg) return;
+    svg.querySelectorAll('.crack-layer path').forEach(function (path) {
+      path.style.strokeDasharray = '';
+      path.style.strokeDashoffset = '';
+      path.style.opacity = '';
+    });
+  }
+
+  function activateScreenCracks() {
+    var cracks = ensureCracksPortal();
+    if (!cracks || cracks.classList.contains('active')) return;
+
+    cracks.hidden = false;
+    cracks.classList.remove('screen-cracks--waapi', 'screen-cracks--css');
+    resetCrackPathStyles();
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        cracks.classList.add('active');
+        if (isTouchDevice()) {
+          cracks.classList.add('screen-cracks--css');
+        } else {
+          cracks.classList.add('screen-cracks--waapi');
+          animateCrackPaths();
+        }
+      });
+    });
+  }
+
   function animateCrackPaths() {
     var svg = document.querySelector('#screenCracks .screen-crack-glass');
     if (!svg) return;
@@ -612,13 +651,9 @@ window.RoxLaunch = (function () {
     screenShake = 24;
     spawnImpactBurst(x, y, 14, true);
 
-    var cracks = document.getElementById('screenCracks');
+    var cracks = ensureCracksPortal();
     if (cracks && !cracks.classList.contains('active')) {
-      cracks.hidden = false;
-      requestAnimationFrame(function () {
-        cracks.classList.add('active');
-        animateCrackPaths();
-      });
+      activateScreenCracks();
     }
 
     clearSiteShake();
