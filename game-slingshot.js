@@ -126,6 +126,7 @@ window.RoxLaunch = (function () {
   var fearTremble = 0;
   var fearFleeTriggered = false;
   var activePointerId = null;
+  var lastProjectilePos = null;
   var gamePaused = false;
   var gameOver = false;
   var levelWon = false;
@@ -165,7 +166,13 @@ window.RoxLaunch = (function () {
 
   function screenToWorld(x, y) {
     var rect = canvas.getBoundingClientRect();
-    return { x: (x - rect.left) / scaleX, y: (y - rect.top) / scaleY };
+    if (!rect.width || !rect.height) {
+      return { x: (x - rect.left) / scaleX, y: (y - rect.top) / scaleY };
+    }
+    return {
+      x: ((x - rect.left) / rect.width) * WORLD_W,
+      y: ((y - rect.top) / rect.height) * WORLD_H
+    };
   }
 
   function getPullRatio() {
@@ -756,6 +763,7 @@ window.RoxLaunch = (function () {
     rocketImpactTriggered = false;
     fearFleeTriggered = false;
     activePointerId = null;
+    lastProjectilePos = null;
   }
 
   function createProjectile() {
@@ -1064,6 +1072,7 @@ window.RoxLaunch = (function () {
     isDragging = false;
     shotsLeft--;
     trail = [];
+    lastProjectilePos = null;
     updateHud();
     dragPoint = { x: SLING_X, y: SLING_Y };
 
@@ -1104,14 +1113,7 @@ window.RoxLaunch = (function () {
     return (distX * distX + distY * distY) < r * r;
   }
 
-  function checkProjectileOverlaps() {
-    if (!isFlying || !projectile || projectileShattered) return;
-
-    var pos = projectile.position;
-    var px = pos.x;
-    var py = pos.y;
-    var impact = Vector.magnitude(projectile.velocity);
-
+  function checkProjectileHitsAt(px, py, impact) {
     targets.forEach(function (t) {
       if (t.destroyed) return;
       var tp = t.body.position;
@@ -1145,8 +1147,37 @@ window.RoxLaunch = (function () {
     }
   }
 
+  function checkProjectileOverlaps() {
+    if (!isFlying || !projectile || projectileShattered) return;
+
+    var pos = projectile.position;
+    var px = pos.x;
+    var py = pos.y;
+    var impact = Vector.magnitude(projectile.velocity);
+
+    if (lastProjectilePos) {
+      var x0 = lastProjectilePos.x;
+      var y0 = lastProjectilePos.y;
+      var segDx = px - x0;
+      var segDy = py - y0;
+      var segLen = Math.sqrt(segDx * segDx + segDy * segDy);
+      var steps = Math.max(2, Math.ceil(segLen / (PROJECTILE_R * 0.45)));
+      var s;
+      for (s = 0; s <= steps; s++) {
+        var t = s / steps;
+        checkProjectileHitsAt(x0 + segDx * t, y0 + segDy * t, impact);
+        if (projectileShattered) return;
+      }
+    } else {
+      checkProjectileHitsAt(px, py, impact);
+    }
+
+    lastProjectilePos = { x: px, y: py };
+  }
+
   function stepPhysics() {
-    var steps = isTouchDevice() ? 3 : 1;
+    var perf = window.YedRoxPerf || {};
+    var steps = (isTouchDevice() || perf.lite) ? 5 : 1;
     var i;
     for (i = 0; i < steps; i++) {
       Engine.update(engine, FIXED_DELTA);
@@ -1173,6 +1204,7 @@ window.RoxLaunch = (function () {
   function onPointerMove(e) {
     if (!isDragging || e.pointerId !== activePointerId) return;
     e.preventDefault();
+    applyCanvasResize();
     var pos = screenToWorld(e.clientX, e.clientY);
     var dx = pos.x - SLING_X;
     var dy = pos.y - SLING_Y;
@@ -1186,6 +1218,7 @@ window.RoxLaunch = (function () {
 
   function onPointerUp(e) {
     if (!isDragging || e.pointerId !== activePointerId) return;
+    e.preventDefault();
     isDragging = false;
     activePointerId = null;
     try { canvas.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -1743,17 +1776,25 @@ window.RoxLaunch = (function () {
     if (gamePaused) return;
 
     var perf = window.YedRoxPerf || {};
+    var renderFrame = true;
+
     if (perf.lite) {
       if (!gameLoopLastTs) gameLoopLastTs = ts;
       if (ts - gameLoopLastTs < 33) {
-        animFrame = requestAnimationFrame(gameLoop);
-        return;
+        renderFrame = false;
+      } else {
+        gameLoopLastTs = ts;
       }
-      gameLoopLastTs = ts;
     }
 
     stepPhysics();
     settleCheck();
+
+    if (!renderFrame) {
+      animFrame = requestAnimationFrame(gameLoop);
+      return;
+    }
+
     render();
     animFrame = requestAnimationFrame(gameLoop);
   }
@@ -1790,8 +1831,8 @@ window.RoxLaunch = (function () {
   function bindInput() {
     canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
     canvas.addEventListener('pointermove', onPointerMove, { passive: false });
-    canvas.addEventListener('pointerup', onPointerUp);
-    canvas.addEventListener('pointercancel', onPointerUp);
+    canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+    canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
     window.addEventListener('resize', resizeCanvas);
 
     if (window.ResizeObserver && canvas.parentElement) {
@@ -1829,6 +1870,7 @@ window.RoxLaunch = (function () {
     var iterations = (perf.lite && !isTouchDevice()) ? 6 : 10;
 
     engine = Engine.create({ gravity: { x: 0, y: 1 } });
+    engine.enableSleeping = false;
     engine.positionIterations = iterations;
     engine.velocityIterations = iterations;
 
@@ -1942,6 +1984,8 @@ window.RoxLaunch = (function () {
     if (!initialized || !gamePaused) return;
     gamePaused = false;
     gameLoopLastTs = 0;
+    applyCanvasResize();
+    resizeCanvas();
     animFrame = requestAnimationFrame(gameLoop);
   }
 
