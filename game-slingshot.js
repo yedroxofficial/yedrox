@@ -200,6 +200,9 @@ window.RoxLaunch = (function () {
   var projectileShattered = false;
   var winDelayTimer = null;
   var siteShakeTimer = null;
+  var settleTimer = null;
+  var shatterSettleTimer = null;
+  var supportCheckFrame = 0;
   var WIN_CELEBRATION_DELAY = 3200;
 
   var hud = {};
@@ -325,6 +328,32 @@ window.RoxLaunch = (function () {
 
   function hasShotsRemaining() {
     return shotsLeft > 0;
+  }
+
+  function clearSettleTimer() {
+    if (settleTimer) {
+      clearTimeout(settleTimer);
+      settleTimer = null;
+    }
+  }
+
+  function clearShatterSettleTimer() {
+    if (shatterSettleTimer) {
+      clearTimeout(shatterSettleTimer);
+      shatterSettleTimer = null;
+    }
+  }
+
+  function consumeShot() {
+    if (shotsLeft <= 0) {
+      canShoot = false;
+      return false;
+    }
+    shotsLeft--;
+    if (shotsLeft < 0) shotsLeft = 0;
+    canShoot = false;
+    updateHud();
+    return true;
   }
 
   function updateHud() {
@@ -494,22 +523,22 @@ window.RoxLaunch = (function () {
   }
 
   function checkGameOver() {
-    if (gameOver || levelWon) return;
-    if (!canShoot && !isFlying && !isSettling && !isShattered && shotsLeft <= 0) {
-      if (!allTargetsDestroyed()) {
-        gameOver = true;
-        combo = 0;
-        showModal(
-          'Out of Shots',
-          'Pull back further for more power! Try aiming higher.',
-          false,
-          function () {
-            hideModal();
-            buildLevel(currentLevel);
-          }
-        );
+    if (gameOver || levelWon || shotsLeft > 0) return;
+    if (isFlying || isSettling || isShattered) return;
+    if (allTargetsDestroyed()) return;
+
+    gameOver = true;
+    canShoot = false;
+    combo = 0;
+    showModal(
+      'Out of Shots',
+      'Pull back further for more power! Try aiming higher.',
+      false,
+      function () {
+        hideModal();
+        buildLevel(currentLevel);
       }
-    }
+    );
   }
 
   function clearSiteShake() {
@@ -781,7 +810,9 @@ window.RoxLaunch = (function () {
     trail = [];
     rocketFlames = [];
 
-    setTimeout(function () {
+    clearShatterSettleTimer();
+    shatterSettleTimer = setTimeout(function () {
+      shatterSettleTimer = null;
       finishShatterSettle();
     }, 1800);
   }
@@ -793,7 +824,9 @@ window.RoxLaunch = (function () {
     isRocketShot = false;
     rocketImpactTriggered = false;
     isSettling = true;
-    setTimeout(function () {
+    clearSettleTimer();
+    settleTimer = setTimeout(function () {
+      settleTimer = null;
       isSettling = false;
       if (!allTargetsDestroyed() && hasShotsRemaining()) {
         createProjectile();
@@ -945,9 +978,19 @@ window.RoxLaunch = (function () {
     return false;
   }
 
+  function shouldCheckSupport() {
+    var perf = window.YedRoxPerf || {};
+    if (!isTouchDevice() && !perf.lite) return true;
+    supportCheckFrame++;
+    return supportCheckFrame % 4 === 0;
+  }
+
   function checkUnsupportedStructures() {
+    if (!shouldCheckSupport()) return;
+
     var pass;
-    for (pass = 0; pass < 4; pass++) {
+    var maxPasses = (isTouchDevice() || (window.YedRoxPerf && window.YedRoxPerf.lite)) ? 2 : 4;
+    for (pass = 0; pass < maxPasses; pass++) {
       var wokeAny = false;
 
       levelBodies.forEach(function (block) {
@@ -999,6 +1042,9 @@ window.RoxLaunch = (function () {
     activePointerId = null;
     rocketFlames = [];
     isShattered = false;
+    clearSettleTimer();
+    clearShatterSettleTimer();
+    supportCheckFrame = 0;
 
     var level = LEVELS[index];
     if (!level) return;
@@ -1114,14 +1160,16 @@ window.RoxLaunch = (function () {
   }
 
   function settleCheck() {
-    if (isShattered || projectileShattered) return;
+    if (isShattered || projectileShattered || isSettling) return;
     if (!isFlying || !projectile) return;
     var speed = Vector.magnitude(projectile.velocity);
     if (speed < 0.35) {
       isFlying = false;
       isSettling = true;
       combo = 0;
-      setTimeout(function () {
+      clearSettleTimer();
+      settleTimer = setTimeout(function () {
+        settleTimer = null;
         isSettling = false;
         removeProjectile();
         if (!allTargetsDestroyed() && hasShotsRemaining()) {
@@ -1135,12 +1183,22 @@ window.RoxLaunch = (function () {
   }
 
   function launchProjectile() {
-    if (!projectile || !canShoot || !hasShotsRemaining()) return;
+    if (!projectile || !canShoot || gameOver || levelWon) return;
+    if (!hasShotsRemaining()) {
+      canShoot = false;
+      checkGameOver();
+      return;
+    }
 
     var pull = getPullVector();
     if (pull.len < 12) {
       dragPoint = { x: SLING_X, y: SLING_Y };
       if (projectile) Body.setPosition(projectile, dragPoint);
+      return;
+    }
+
+    if (!consumeShot()) {
+      checkGameOver();
       return;
     }
 
@@ -1163,13 +1221,10 @@ window.RoxLaunch = (function () {
       projectile.frictionAir = 0.006;
     }
 
-    canShoot = false;
     isFlying = true;
     isDragging = false;
-    shotsLeft--;
     trail = [];
     lastProjectilePos = null;
-    updateHud();
     dragPoint = { x: SLING_X, y: SLING_Y };
 
     if (hud.powerBar) hud.powerBar.classList.remove('rocket-ready');
@@ -1257,7 +1312,10 @@ window.RoxLaunch = (function () {
       var segDx = px - x0;
       var segDy = py - y0;
       var segLen = Math.sqrt(segDx * segDx + segDy * segDy);
-      var steps = Math.max(2, Math.ceil(segLen / (PROJECTILE_R * 0.45)));
+      var stepSize = PROJECTILE_R * (isTouchDevice() ? 0.35 : 0.45);
+      var steps = Math.max(2, Math.ceil(segLen / stepSize));
+      var maxSteps = isTouchDevice() ? 8 : 14;
+      if (steps > maxSteps) steps = maxSteps;
       var s;
       for (s = 0; s <= steps; s++) {
         var t = s / steps;
@@ -1273,12 +1331,13 @@ window.RoxLaunch = (function () {
 
   function stepPhysics() {
     var perf = window.YedRoxPerf || {};
-    var steps = (isTouchDevice() || perf.lite) ? 5 : 1;
+    var touchLite = isTouchDevice() || perf.lite;
+    var steps = touchLite ? 2 : 1;
     var i;
     for (i = 0; i < steps; i++) {
       Engine.update(engine, FIXED_DELTA);
-      if (isFlying && projectile) checkProjectileOverlaps();
     }
+    if (isFlying && projectile) checkProjectileOverlaps();
   }
 
   function onPointerDown(e) {
@@ -1319,7 +1378,12 @@ window.RoxLaunch = (function () {
     activePointerId = null;
     try { canvas.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     updateHud();
-    launchProjectile();
+    if (hasShotsRemaining() && canShoot) {
+      launchProjectile();
+    } else {
+      canShoot = false;
+      checkGameOver();
+    }
   }
 
   function resizeCanvas() {
@@ -1883,8 +1947,10 @@ window.RoxLaunch = (function () {
       }
     }
 
-    stepPhysics();
-    settleCheck();
+    if (renderFrame || !perf.lite) {
+      stepPhysics();
+      settleCheck();
+    }
 
     if (!renderFrame) {
       animFrame = requestAnimationFrame(gameLoop);
