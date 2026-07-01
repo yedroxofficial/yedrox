@@ -31,46 +31,93 @@ window.RoxLaunch = (function () {
     {
       shots: 3,
       blocks: [
-        { x: 620, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 700, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 660, y: 360, w: 110, h: 22, type: 'wood' }
+        { x: 550, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 590, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 570, y: 360, w: 70, h: 22, type: 'wood' },
+        { x: 710, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 750, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 730, y: 360, w: 70, h: 22, type: 'wood' }
       ],
-      targets: [{ x: 660, y: 325, r: 24 }]
+      targets: [
+        { x: 570, y: 349, r: 22 },
+        { x: 730, y: 349, r: 22 }
+      ]
     },
     {
       shots: 4,
       blocks: [
-        { x: 580, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 640, y: 413.5, w: 22, h: 85, type: 'stone' },
-        { x: 700, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 610, y: 360, w: 85, h: 22, type: 'wood' },
-        { x: 670, y: 360, w: 85, h: 22, type: 'stone' },
-        { x: 640, y: 327, w: 85, h: 22, type: 'wood' }
+        { x: 560, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 660, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 760, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 660, y: 360, w: 220, h: 22, type: 'wood' },
+        { x: 660, y: 306.5, w: 22, h: 85, type: 'stone' },
+        { x: 660, y: 253, w: 90, h: 22, type: 'stone' }
       ],
       targets: [
-        { x: 580, y: 349, r: 22 },
-        { x: 700, y: 349, r: 22 },
-        { x: 640, y: 292, r: 24 }
+        { x: 560, y: 349, r: 22 },
+        { x: 760, y: 349, r: 22 },
+        { x: 660, y: 231, r: 24 }
       ]
     },
     {
       shots: 5,
       blocks: [
+        { x: 520, y: 413.5, w: 22, h: 85, type: 'stone' },
         { x: 560, y: 413.5, w: 22, h: 85, type: 'stone' },
-        { x: 620, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 680, y: 413.5, w: 22, h: 85, type: 'stone' },
-        { x: 740, y: 413.5, w: 22, h: 85, type: 'wood' },
-        { x: 590, y: 360, w: 65, h: 22, type: 'wood' },
-        { x: 650, y: 360, w: 65, h: 22, type: 'stone' },
-        { x: 710, y: 360, w: 65, h: 22, type: 'wood' },
-        { x: 620, y: 327, w: 65, h: 22, type: 'stone' },
-        { x: 680, y: 327, w: 65, h: 22, type: 'wood' },
-        { x: 650, y: 294, w: 90, h: 22, type: 'stone' }
+        { x: 540, y: 360, w: 70, h: 22, type: 'wood' },
+        { x: 540, y: 306.5, w: 22, h: 85, type: 'stone' },
+        { x: 540, y: 253, w: 70, h: 22, type: 'stone' },
+        { x: 720, y: 413.5, w: 22, h: 85, type: 'wood' },
+        { x: 760, y: 413.5, w: 22, h: 85, type: 'wood' },
+        { x: 740, y: 360, w: 70, h: 22, type: 'wood' },
+        { x: 620, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 660, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 640, y: 360, w: 70, h: 22, type: 'stone' }
       ],
       targets: [
-        { x: 560, y: 349, r: 20 },
+        { x: 520, y: 349, r: 20 },
         { x: 740, y: 349, r: 20 },
-        { x: 650, y: 259, r: 26 }
+        { x: 640, y: 325, r: 24 }
+      ]
+    },
+    {
+      shots: 5,
+      blocks: [
+        { x: 490, y: 430, w: 22, h: 50, type: 'wood' },
+        { x: 515, y: 422, w: 22, h: 65, type: 'wood' },
+        { x: 660, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 720, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 690, y: 360, w: 110, h: 22, type: 'stone' },
+        { x: 690, y: 306.5, w: 22, h: 85, type: 'stone' },
+        { x: 690, y: 253, w: 90, h: 22, type: 'stone' },
+        { x: 640, y: 413.5, w: 22, h: 85, type: 'wood' }
+      ],
+      targets: [
+        { x: 700, y: 231, r: 24 }
+      ]
+    },
+    {
+      shots: 6,
+      blocks: [
+        { x: 530, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 570, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 550, y: 360, w: 70, h: 22, type: 'wood' },
+        { x: 550, y: 306.5, w: 22, h: 85, type: 'stone' },
+        { x: 550, y: 253, w: 70, h: 22, type: 'stone' },
+        { x: 710, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 750, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 730, y: 360, w: 70, h: 22, type: 'wood' },
+        { x: 730, y: 306.5, w: 22, h: 85, type: 'stone' },
+        { x: 730, y: 253, w: 70, h: 22, type: 'stone' },
+        { x: 620, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 660, y: 413.5, w: 22, h: 85, type: 'stone' },
+        { x: 640, y: 360, w: 50, h: 22, type: 'stone' }
+      ],
+      targets: [
+        { x: 530, y: 349, r: 20 },
+        { x: 570, y: 231, r: 20 },
+        { x: 710, y: 349, r: 20 },
+        { x: 750, y: 231, r: 20 }
       ]
     }
   ];
@@ -276,10 +323,14 @@ window.RoxLaunch = (function () {
     return clampPull(dx, dy);
   }
 
+  function hasShotsRemaining() {
+    return shotsLeft > 0;
+  }
+
   function updateHud() {
     if (hud.score) hud.score.textContent = String(totalScore);
     if (hud.level) hud.level.textContent = String(currentLevel + 1);
-    if (hud.shots) hud.shots.textContent = String(shotsLeft);
+    if (hud.shots) hud.shots.textContent = String(Math.max(0, shotsLeft));
     if (hud.next) hud.next.hidden = !levelWon;
     if (hud.powerWrap) {
       hud.powerWrap.classList.toggle('is-active', isDragging);
@@ -744,8 +795,10 @@ window.RoxLaunch = (function () {
     isSettling = true;
     setTimeout(function () {
       isSettling = false;
-      if (!allTargetsDestroyed()) {
+      if (!allTargetsDestroyed() && hasShotsRemaining()) {
         createProjectile();
+      } else {
+        canShoot = false;
       }
       if (allTargetsDestroyed()) {
         scheduleLevelComplete();
@@ -803,6 +856,12 @@ window.RoxLaunch = (function () {
 
   function createProjectile() {
     removeProjectile();
+    if (!hasShotsRemaining() || gameOver || levelWon) {
+      canShoot = false;
+      checkGameOver();
+      updateHud();
+      return;
+    }
     projectile = Bodies.circle(SLING_X, SLING_Y, PROJECTILE_R, {
       label: 'projectile',
       density: 0.002,
@@ -1065,8 +1124,10 @@ window.RoxLaunch = (function () {
       setTimeout(function () {
         isSettling = false;
         removeProjectile();
-        if (!allTargetsDestroyed()) {
+        if (!allTargetsDestroyed() && hasShotsRemaining()) {
           createProjectile();
+        } else {
+          canShoot = false;
         }
         checkWinLose();
       }, 500);
@@ -1074,7 +1135,7 @@ window.RoxLaunch = (function () {
   }
 
   function launchProjectile() {
-    if (!projectile || !canShoot) return;
+    if (!projectile || !canShoot || !hasShotsRemaining()) return;
 
     var pull = getPullVector();
     if (pull.len < 12) {
@@ -1221,7 +1282,7 @@ window.RoxLaunch = (function () {
   }
 
   function onPointerDown(e) {
-    if (!canShoot || gameOver || levelWon || gamePaused) return;
+    if (!canShoot || !hasShotsRemaining() || gameOver || levelWon || gamePaused) return;
     if (activePointerId !== null) return;
 
     applyCanvasResize();
